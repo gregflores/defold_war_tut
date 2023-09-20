@@ -1,0 +1,107 @@
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	self.moving = false
+	self.firing = false
+	self.anim = false
+	
+	self.input = vmath.vector3()
+	self.dir = vmath.vector3(0, 1, 0)
+	self.prevDir = vmath.vector3()
+	self.speed = 50
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+
+local function update_animation(self)
+	if self.moving == false then
+		self.anim = false
+		if self.dir.x == 1 then
+			msg.post("#sprite", "play_animation", {id = hash("idle-right")})
+		elseif self.dir.x == -1 then
+			msg.post("#sprite", "play_animation", {id = hash("idle-left")})
+		elseif self.dir.y == -1 then
+			msg.post("#sprite", "play_animation", {id = hash("idle-down")})
+		elseif self.dir.y == 1 then
+			msg.post("#sprite", "play_animation", {id = hash("idle-up")})
+		elseif self.dir.x > 0 and self.dir.y > 0 then
+			msg.post("#sprite", "play_animation", {id = hash("idle-up-right")})
+		elseif self.dir.x < 0 and self.dir.y > 0 then
+			msg.post("#sprite", "play_animation", {id = hash("idle-up-left")})
+		elseif self.dir.x > 0 and self.dir.y < 0 then
+			msg.post("#sprite", "play_animation", {id = hash("idle-down-right")})
+		elseif self.dir.x < 0 and self.dir.y < 0 then
+			msg.post("#sprite", "play_animation", {id = hash("idle-down-left")})
+		end
+	end
+	if self.moving == true and self.prevDir ~= self.dir then
+		self.anim = true
+		print(self.dir)
+		if self.dir.x == 1 then
+			msg.post("#sprite", "play_animation", {id = hash("player-right")})
+		elseif self.dir.x == -1 then
+			msg.post("#sprite", "play_animation", {id = hash("player-left")})
+		elseif self.dir.y == -1 then
+			msg.post("#sprite", "play_animation", {id = hash("player-down")})
+		elseif self.dir.y == 1 then
+			msg.post("#sprite", "play_animation", {id = hash("player-up")})
+		elseif self.dir.x > 0 and self.dir.y > 0 then
+			msg.post("#sprite", "play_animation", {id = hash("player-up-right")})
+		elseif self.dir.x < 0 and self.dir.y > 0 then
+			msg.post("#sprite", "play_animation", {id = hash("player-up-left")})
+		elseif self.dir.x > 0 and self.dir.y < 0 then
+			msg.post("#sprite", "play_animation", {id = hash("player-down-right")})
+		elseif self.dir.x < 0 and self.dir.y < 0 then
+			msg.post("#sprite", "play_animation", {id = hash("player-down-left")})
+		end
+	end
+	self.prevDir = self.dir
+end
+
+function update(self, dt)
+	update_animation(self)
+	if self.moving then
+		local pos = go.get_position()
+		pos = pos + self.dir * self.speed * dt
+		go.set_position(pos)
+	end
+
+	if self.firing then
+		local angle = math.atan2(self.dir.y, self.dir.x)
+		local rot = vmath.quat_rotation_z(angle)
+		local props = { dir = self.dir }
+		factory.create("#rocketfactory", nil, rot, props)
+	end
+	
+	self.input = vmath.vector3()
+	
+	self.moving = false
+	self.firing = false
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("up") then
+		self.input.y = 1
+	elseif action_id == hash("down") then
+		self.input.y = -1
+	elseif action_id == hash("left") then
+		self.input.x = -1
+	elseif action_id == hash("right") then
+		self.input.x = 1
+	elseif action_id == hash("fire") and action.pressed then
+		self.firing = true
+	end
+
+	if vmath.length(self.input) > 0 then
+		self.moving = true
+		self.dir = vmath.normalize(self.input)
+	end
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
