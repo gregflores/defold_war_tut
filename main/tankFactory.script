@@ -1,0 +1,39 @@
+function init(self)
+	self.tankCount = 0
+	self.maxTankCount = 10
+	self.spawnDelay = 10
+	self.spawnTimer = self.spawnDelay
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	if self.tankCount < self.maxTankCount then
+		if self.spawnTimer <= 0 then
+			print("spawn tank")
+			print(self.tankCount)
+			local tankSpawnPos = vmath.vector3(0,0,1)
+			tankSpawnPos.x = math.random(0,720)
+			tankSpawnPos.y = math.random(0,720)
+			print(tankSpawnPos)
+			factory.create("#tankFactory", tankSpawnPos, nil, {})
+			self.tankCount = self.tankCount + 1
+			self.spawnTimer = self.spawnDelay
+		else
+			self.spawnTimer = self.spawnTimer - dt
+		end
+	end
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("tank_destroyed") then
+		self.tankCount = self.tankCount -1
+	end
+end

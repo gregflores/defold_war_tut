@@ -1,14 +1,21 @@
+local function play_animation(self, animation)
+	if self.current_animation ~= animation then
+		self.current_animation = animation
+		sprite.play_flipbook("#sprite", animation)
+	end
+end
+
 function init(self)
 	msg.post(".", "acquire_input_focus")
 
 	self.moving = false
 	self.firing = false
-	self.anim = false
+
+	self.current_animation = nil
 	
 	self.input = vmath.vector3()
-	self.dir = vmath.vector3(0, 1, 0)
-	self.prevDir = vmath.vector3()
-	self.speed = 50
+	self.dir = vmath.vector3(0.7, 0.7, 0)
+	self.speed = 150
 end
 
 function final(self)
@@ -17,47 +24,44 @@ end
 
 local function update_animation(self)
 	if self.moving == false then
-		self.anim = false
+	
 		if self.dir.x == 1 then
-			msg.post("#sprite", "play_animation", {id = hash("idle-right")})
+			play_animation(self,  hash("idle-right"))
 		elseif self.dir.x == -1 then
-			msg.post("#sprite", "play_animation", {id = hash("idle-left")})
+			play_animation(self,  hash("idle-left"))
 		elseif self.dir.y == -1 then
-			msg.post("#sprite", "play_animation", {id = hash("idle-down")})
+			play_animation(self,  hash("idle-down"))
 		elseif self.dir.y == 1 then
-			msg.post("#sprite", "play_animation", {id = hash("idle-up")})
+			play_animation(self,  hash("idle-up"))
 		elseif self.dir.x > 0 and self.dir.y > 0 then
-			msg.post("#sprite", "play_animation", {id = hash("idle-up-right")})
+			play_animation(self,  hash("idle-up-right"))
 		elseif self.dir.x < 0 and self.dir.y > 0 then
-			msg.post("#sprite", "play_animation", {id = hash("idle-up-left")})
+			play_animation(self,  hash("idle-up-left"))
 		elseif self.dir.x > 0 and self.dir.y < 0 then
-			msg.post("#sprite", "play_animation", {id = hash("idle-down-right")})
+			play_animation(self,  hash("idle-down-right"))
 		elseif self.dir.x < 0 and self.dir.y < 0 then
-			msg.post("#sprite", "play_animation", {id = hash("idle-down-left")})
+			play_animation(self,  hash("idle-down-left"))
 		end
 	end
-	if self.moving == true and self.prevDir ~= self.dir then
-		self.anim = true
-		print(self.dir)
+	if self.moving == true then
 		if self.dir.x == 1 then
-			msg.post("#sprite", "play_animation", {id = hash("player-right")})
+			play_animation(self,  hash("player-right"))
 		elseif self.dir.x == -1 then
-			msg.post("#sprite", "play_animation", {id = hash("player-left")})
+			play_animation(self,  hash("player-left"))
 		elseif self.dir.y == -1 then
-			msg.post("#sprite", "play_animation", {id = hash("player-down")})
+			play_animation(self,  hash("player-down"))
 		elseif self.dir.y == 1 then
-			msg.post("#sprite", "play_animation", {id = hash("player-up")})
+			play_animation(self,  hash("player-up"))
 		elseif self.dir.x > 0 and self.dir.y > 0 then
-			msg.post("#sprite", "play_animation", {id = hash("player-up-right")})
+			play_animation(self,  hash("player-up-right"))
 		elseif self.dir.x < 0 and self.dir.y > 0 then
-			msg.post("#sprite", "play_animation", {id = hash("player-up-left")})
+			play_animation(self,  hash("player-up-left"))
 		elseif self.dir.x > 0 and self.dir.y < 0 then
-			msg.post("#sprite", "play_animation", {id = hash("player-down-right")})
+			play_animation(self,  hash("player-down-right"))
 		elseif self.dir.x < 0 and self.dir.y < 0 then
-			msg.post("#sprite", "play_animation", {id = hash("player-down-left")})
+			play_animation(self,  hash("player-down-left"))
 		end
 	end
-	self.prevDir = self.dir
 end
 
 function update(self, dt)
@@ -93,7 +97,7 @@ function on_input(self, action_id, action)
 	elseif action_id == hash("fire") and action.pressed then
 		self.firing = true
 	end
-
+	
 	if vmath.length(self.input) > 0 then
 		self.moving = true
 		self.dir = vmath.normalize(self.input)

@@ -1,0 +1,123 @@
+local function play_animation(self, animation)
+	if self.current_animation ~= animation then
+		self.current_animation = animation
+		sprite.play_flipbook("#sprite", animation)
+	end
+end
+
+local function update_animation(self)
+-- 	if self.moving == false then
+-- 
+-- 		if self.dir.x == 1 then
+-- 			play_animation(self,  hash("idle-right"))
+-- 		elseif self.dir.x == -1 then
+-- 			play_animation(self,  hash("idle-left"))
+-- 		elseif self.dir.y == -1 then
+-- 			play_animation(self,  hash("idle-down"))
+-- 		elseif self.dir.y == 1 then
+-- 			play_animation(self,  hash("idle-up"))
+-- 		elseif self.dir.x > 0 and self.dir.y > 0 then
+-- 			play_animation(self,  hash("idle-up-right"))
+-- 		elseif self.dir.x < 0 and self.dir.y > 0 then
+-- 			play_animation(self,  hash("idle-up-left"))
+-- 		elseif self.dir.x > 0 and self.dir.y < 0 then
+-- 			play_animation(self,  hash("idle-down-right"))
+-- 		elseif self.dir.x < 0 and self.dir.y < 0 then
+-- 			play_animation(self,  hash("idle-down-left"))
+-- 		end
+-- 	end
+	if self.moving == true then
+		if self.dir.x == 1 then
+			play_animation(self,  hash("tank-right"))
+		elseif self.dir.x == -1 then
+			play_animation(self,  hash("tank-left"))
+		elseif self.dir.y == -1 then
+			play_animation(self,  hash("tank-down"))
+		elseif self.dir.y == 1 then
+			play_animation(self,  hash("tank-up"))
+		elseif self.dir.x > 0 and self.dir.y > 0 then
+			play_animation(self,  hash("tank-up-right"))
+		elseif self.dir.x < 0 and self.dir.y > 0 then
+			play_animation(self,  hash("tank-up-left"))
+		elseif self.dir.x > 0 and self.dir.y < 0 then
+			play_animation(self,  hash("tank-down-right"))
+		elseif self.dir.x < 0 and self.dir.y < 0 then
+			play_animation(self,  hash("tank-down-left"))
+		end
+	end
+end
+
+function init(self)
+	self.spawnPoint = go.get_position()
+	self.tankPatrolA = vmath.vector3(0,0,1)
+	self.tankPatrolA.x = math.random(0,720)
+	self.tankPatrolA.y = math.random(0,720)
+	self.tankPatrolB = vmath.vector3(0,0,1)
+	self.tankPatrolB.x = math.random(0,720)
+	self.tankPatrolB.y = math.random(0,720)
+	self.curMovePoint = self.tankPatrolA
+	self.moving = false
+	self.firing = false
+	self.fireCooldown = 2
+	self.curCooldown = self.fireCooldown
+	self.spawnLag = 5
+	self.fireRange = 250
+	self.closeRange = 75
+	self.current_animation = nil
+	self.dir = vmath.vector3(0.7, 0.7, 0)
+	self.speed = 100
+end
+
+function final(self)
+	msg.post("/tankFactoryGo#tankFactoryScript", "tank_destroyed", {})
+end
+
+function update(self, dt)
+	update_animation(self)
+	self.curCooldown = self.curCooldown - dt
+	if self.spawnLag <= 0 then
+		self.moving = true
+	else
+		self.spawnLag = self.spawnLag - dt
+	end
+	
+	local playerPos = go.get_position("player")
+	local dirToPlayer = playerPos - go.get_position()
+	local normDirToPlayer = vmath.normalize(dirToPlayer)
+	local distanceToPlayerSqr = vmath.length_sqr(dirToPlayer)
+	if distanceToPlayerSqr < (self.fireRange * self.fireRange) and distanceToPlayerSqr > (self.closeRange  * self.closeRange) then
+		self.firing = true
+	end
+	print(playerPos)
+	if self.firing and self.curCooldown <= 0 then 
+		local angle = math.atan2(normDirToPlayer.y, normDirToPlayer.x)
+		local rot = vmath.quat_rotation_z(angle)
+		local props = { dir = normDirToPlayer }
+		factory.create("#rocketfactory", nil, rot, props)
+		self.firing = false
+		self.curCooldown = self.fireCooldown
+	end
+	if self.moving then
+		local curPos = go.get_position()
+		local dirVec = self.curMovePoint - curPos
+		if vmath.length_sqr(dirVec) > 25 then
+			self.dir = vmath.normalize(dirVec)
+			curPos = curPos + self.dir * self.speed * dt
+			go.set_position(curPos)
+		else
+			if self.curMovePoint == self.tankPatrolA then
+				self.curMovePoint = self.tankPatrolB
+			elseif self.curMovePoint == self.tankPatrolB then
+				self.curMovePoint = self.spawnPoint
+			elseif self.curMovePoint == self.spawnPoint then
+				self.curMovePoint = self.tankPatrolA
+			end
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+end
